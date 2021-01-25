@@ -129,6 +129,8 @@
     <setting id="enable_hdr_profiles" type="bool" label="30098" default="false" visible="eq(-1,true)" subsetting="true"/>
     <setting id="enable_dolbyvision_profiles" type="bool" label="30099" default="false" visible="eq(-2,true)" subsetting="true"/>
     <setting id="disable_webvtt_subtitle" type="bool" label="30144" default="false"/>
+    <setting id="use_ssa_subtitles" type="bool" label="Improved (SSA) subtitles" default="false"/>
+    <setting id="ssa_settings" type="action" label="SSA Settings" option="close" action="Addon.OpenSettings(script.module.ttml2ssa)" enable="eq(-1,true)"/>
     <setting id="enable_force_hdcp" type="bool" label="30081" default="false"/>
     <setting label="30116" type="lsep"/><!--Advanced Addon Configuration-->
     <setting id="debug_log_level" type="labelenum" label="30066" values="Disabled|Info|Verbose" default="Disabled"/>

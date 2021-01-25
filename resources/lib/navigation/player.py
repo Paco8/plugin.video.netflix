@@ -176,12 +176,66 @@ def get_inputstream_listitem(videoid):
         list_item.setProperty(
             key='inputstreamaddon' if G.KODI_VERSION.is_major_ver('18') else 'inputstream',
             value=is_helper.inputstream_addon)
+
+        if G.ADDON.getSettingBool('use_ssa_subtitles'):
+            list_item.setSubtitles(_add_subtitles(videoid))
+
         return list_item
     except Exception as exc:  # pylint: disable=broad-except
         # Captures all types of ISH internal errors
         import traceback
         LOG.error(G.py2_decode(traceback.format_exc(), 'latin-1'))
         raise_from(InputStreamHelperError(str(exc)), exc)
+
+
+def _add_subtitles(videoid):
+    import re
+    try:  # Kodi >= 19
+        from xbmcvfs import translatePath  # pylint: disable=ungrouped-imports
+    except ImportError:  # Kodi 18
+        from xbmc import translatePath  # pylint: disable=ungrouped-imports
+    import requests
+    from resources.lib.services.msl.msl_handler import MSLHandler
+    from resources.lib.utils.esn import get_esn
+    from resources.lib.utils.website import parse_html
+    from ttml2ssa import Ttml2SsaAddon
+
+    msl_handler = MSLHandler()
+    manifest = msl_handler.load_manifest(videoid.value)
+    output_folder = translatePath(G.DATA_PATH)
+    subs_paths = []
+
+    ttml = Ttml2SsaAddon()
+    ttml.use_language_filter = False
+
+    for adaptationset in re.compile(r'<AdaptationSet(.*?)></AdaptationSet>', re.DOTALL).findall(manifest):
+        #LOG.debug(adaptationset)
+
+        if 'value="subtitle"' in adaptationset:
+            rx = r'.*?codecs="(?P<codec>.*?)".*?forced="(?P<forced>.*?)".*?impaired="(?P<impaired>.*?)".*?lang="(?P<lang>.*?)".*?value="subtitle".*?nflxProfile="(?P<profile>.*?)".*?<BaseURL>(?P<url>.*?)</BaseURL>'
+            for sub in re.compile(rx, re.DOTALL).findall(adaptationset):
+                LOG.debug(sub)
+                codec, forced, impaired, lang, profile, url = sub
+                url = parse_html(url)
+                LOG.debug("profile: {} codec: {} forced: {} impaired: {} lang: {} url: {}".format(profile, codec, forced, impaired, lang, url))
+                if 'wvtt' or 'stpp' in codec:
+                    filename = '{}{}{}.ssa'.format(lang, ' [CC]' if impaired=='true' else '', '.forced' if forced=='true'  else '')
+                    filename = output_folder +'/'+ filename
+                    LOG.debug('Subtitle filename: {}'.format(filename))
+                    try:
+                        r = requests.get(url, allow_redirects=True)
+                        #LOG.debug("content size: {}".format(len(r.content)))
+                        ttml.subtitle_language = lang
+                        if codec == 'wvtt':
+                            ttml.parse_vtt_from_string(r.content.decode('utf-8'))
+                        else:
+                            ttml.parse_ttml_from_string(r.content)
+                        ttml.write2file(filename)
+                        subs_paths.append(filename)
+                    except:
+                        pass
+
+    return subs_paths
 
 
 def _profile_switch():
