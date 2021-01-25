@@ -173,11 +173,15 @@ def enclose_quotes(content):
 
 def is_minimum_version(version, min_version):
     """Return True if version is equal or greater to min_version"""
+    version = version.split('~')[0]
+    min_version = min_version.split('~')[0]
     return list(map(int, version.split('.'))) >= list(map(int, min_version.split('.')))
 
 
 def is_less_version(version, max_version):
     """Return True if version is less to max_version"""
+    version = version.split('~')[0]
+    max_version = max_version.split('~')[0]
     return list(map(int, version.split('.'))) < list(map(int, max_version.split('.')))
 
 
