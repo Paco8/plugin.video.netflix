@@ -117,6 +117,11 @@
     <setting id="UpNextNotifier_enabled" type="bool" label="30129" default="false" visible="System.HasAddon(service.upnext)"/>
     <setting id="upnext_settings" type="action" label="30178" action="Addon.OpenSettings(service.upnext)" visible="System.HasAddon(service.upnext)" option="close"/>
   </category>
+  <category label="Subtitles"><!--Subtitles-->
+    <setting id="use_ttml2ssa" type="bool" label="$ADDON[script.module.ttml2ssa 32202]" default="true"/>
+    <setting id="subtitle_type" label="$ADDON[script.module.ttml2ssa 32200]" type="enum" values="Normal (SRT)|Improved (SSA)|Both" enable="eq(-1,true)"/>
+    <setting id="ssa_settings" type="action" label="$ADDON[script.module.ttml2ssa 32201]" option="close" action="Addon.OpenSettings(script.module.ttml2ssa)" enable="eq(-2,true)"/>
+  </category>
   <category label="30023"><!--Expert-->
     <setting id="configuration_wizard" type="action" label="30158" action="RunPlugin(plugin://$ID/action/configuration_wizard/)" option="close"/>
     <setting id="is_settings" type="action" label="30035" action="Addon.OpenSettings(inputstream.adaptive)" enable="System.HasAddon(inputstream.adaptive)" option="close"/>

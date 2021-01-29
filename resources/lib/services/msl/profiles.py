@@ -89,6 +89,8 @@ def _subtitle_profiles():
     subtitle_profile = ['webvtt-lssdh-ios8']
     if G.ADDON.getSettingBool('disable_webvtt_subtitle'):
         subtitle_profile = ['simplesdh']
+        if G.ADDON.getSettingBool('use_ttml2ssa'):
+            subtitle_profile = ['dfxp-ls-sdh']
     return subtitle_profile
 
 

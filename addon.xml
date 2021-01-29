@@ -7,6 +7,7 @@
     <import addon="script.module.pycryptodome" version="3.4.3"/>
     <import addon="script.module.requests" version="2.22.0+matrix.1"/>
     <import addon="script.module.myconnpy" version="8.0.18+matrix.1"/> <!--MySQL Connector/Python-->
+    <import addon="script.module.ttml2ssa" version="0.1.14" />
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>
