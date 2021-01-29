@@ -208,7 +208,6 @@ def _add_subtitles(videoid):
         if 'wvtt' or 'stpp' in codec:
             filename = '{}{}{}'.format(lang, ' [CC]' if impaired=='true' else '', '.forced' if forced=='true'  else '')
             filename = output_folder + filename
-            LOG.debug('Subtitle filename: {}'.format(filename))
             try:
                 r = requests.get(url, allow_redirects=True)
                 #LOG.debug("content size: {}".format(len(r.content)))
@@ -221,12 +220,14 @@ def _add_subtitles(videoid):
                     filename_srt = filename + '.srt'
                     ttml.write2file(filename_srt)
                     subs_paths.append(filename_srt)
+                    LOG.debug('Subtitle saved as : {}'.format(filename_srt))
                 if subtype != 'srt':
                     filename_ssa = filename
                     if (subtype == 'both'): filename_ssa += '.ssa'
                     filename_ssa += '.ssa'
                     ttml.write2file(filename_ssa)
                     subs_paths.append(filename_ssa)
+                    LOG.debug('Subtitle saved as : {}'.format(filename_ssa))
             except:
                 pass
 
