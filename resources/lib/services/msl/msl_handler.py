@@ -139,6 +139,24 @@ class MSLHandler(object):
                 common.purge_credentials()
                 self.msl_requests.crypto.clear_user_id_tokens()
             raise
+
+        if G.ADDON.getSettingBool('use_ttml2ssa'):
+            self.sub_list = []
+            for text_track in manifest['timedtexttracks']:
+                if text_track['isNoneTrack']: continue
+                #LOG.debug("text_track: {}".format(json.dumps(text_track, indent=4, sort_keys=True)))
+                downloadable = text_track.get('ttDownloadables')
+                profile = list(downloadable)[0]
+                codec = 'wvtt' if profile == 'webvtt-lssdh-ios8' else 'stpp'
+                impaired = 'true' if text_track['trackType'] == 'ASSISTIVE' else 'false'
+                forced = 'true' if text_track['isForcedNarrative'] else 'false'
+                lang = text_track['language']
+                url = list(downloadable[profile]['downloadUrls'].values())[0]
+                LOG.debug("profile: {} codec: {} forced: {} impaired: {} lang: {} url: {}".format(profile, codec, forced, impaired, lang, url))
+                self.sub_list.append((codec, forced, impaired, lang, profile, url))
+            LOG.debug("sub_list: {}".format(self.sub_list))
+            del manifest['timedtexttracks'][:]
+
         return self.__tranform_to_dash(manifest)
 
     @measure_exec_time_decorator(is_immediate=True)

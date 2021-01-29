@@ -94,7 +94,7 @@ def _subtitle_profiles():
     if G.ADDON.getSettingBool('disable_webvtt_subtitle') \
        or not common.is_minimum_version(isa_version, '2.3.8'):
         subtitle_profile = ['simplesdh']
-        if G.ADDON.getSettingBool('use_ssa_subtitles'):
+        if G.ADDON.getSettingBool('use_ttml2ssa'):
             subtitle_profile = ['dfxp-ls-sdh']
     return subtitle_profile
 

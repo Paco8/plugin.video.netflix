@@ -177,7 +177,7 @@ def get_inputstream_listitem(videoid):
             key='inputstreamaddon' if G.KODI_VERSION.is_major_ver('18') else 'inputstream',
             value=is_helper.inputstream_addon)
 
-        if G.ADDON.getSettingBool('use_ssa_subtitles'):
+        if G.ADDON.getSettingBool('use_ttml2ssa'):
             list_item.setSubtitles(_add_subtitles(videoid))
 
         return list_item
@@ -190,50 +190,52 @@ def get_inputstream_listitem(videoid):
 
 def _add_subtitles(videoid):
     import re
+    import requests
     try:  # Kodi >= 19
         from xbmcvfs import translatePath  # pylint: disable=ungrouped-imports
     except ImportError:  # Kodi 18
         from xbmc import translatePath  # pylint: disable=ungrouped-imports
-    import requests
     from resources.lib.services.msl.msl_handler import MSLHandler
-    from resources.lib.utils.esn import get_esn
-    from resources.lib.utils.website import parse_html
     from ttml2ssa import Ttml2SsaAddon
 
     msl_handler = MSLHandler()
-    manifest = msl_handler.load_manifest(videoid.value)
+    manifest = msl_handler.load_manifest(videoid.value).decode('utf-8')
     output_folder = translatePath(G.DATA_PATH)
     subs_paths = []
 
     ttml = Ttml2SsaAddon()
     ttml.use_language_filter = False
 
-    for adaptationset in re.compile(r'<AdaptationSet(.*?)></AdaptationSet>', re.DOTALL).findall(manifest):
-        #LOG.debug(adaptationset)
+    subtype = ['srt', 'ssa', 'both'][G.ADDON.getSettingInt('subtitle_type')]
 
-        if 'value="subtitle"' in adaptationset:
-            rx = r'.*?codecs="(?P<codec>.*?)".*?forced="(?P<forced>.*?)".*?impaired="(?P<impaired>.*?)".*?lang="(?P<lang>.*?)".*?value="subtitle".*?nflxProfile="(?P<profile>.*?)".*?<BaseURL>(?P<url>.*?)</BaseURL>'
-            for sub in re.compile(rx, re.DOTALL).findall(adaptationset):
-                LOG.debug(sub)
-                codec, forced, impaired, lang, profile, url = sub
-                url = parse_html(url)
-                LOG.debug("profile: {} codec: {} forced: {} impaired: {} lang: {} url: {}".format(profile, codec, forced, impaired, lang, url))
-                if 'wvtt' or 'stpp' in codec:
-                    filename = '{}{}{}.ssa'.format(lang, ' [CC]' if impaired=='true' else '', '.forced' if forced=='true'  else '')
-                    filename = output_folder +'/'+ filename
-                    LOG.debug('Subtitle filename: {}'.format(filename))
-                    try:
-                        r = requests.get(url, allow_redirects=True)
-                        #LOG.debug("content size: {}".format(len(r.content)))
-                        ttml.subtitle_language = lang
-                        if codec == 'wvtt':
-                            ttml.parse_vtt_from_string(r.content.decode('utf-8'))
-                        else:
-                            ttml.parse_ttml_from_string(r.content)
-                        ttml.write2file(filename)
-                        subs_paths.append(filename)
-                    except:
-                        pass
+    entries = msl_handler.sub_list
+    for entry in entries:
+        codec, forced, impaired, lang, profile, url = entry
+        LOG.debug("profile: {} codec: {} forced: {} impaired: {} lang: {} url: {}".format(profile, codec, forced, impaired, lang, url))
+        if 'wvtt' or 'stpp' in codec:
+            filename = '{}{}{}'.format(lang, ' [CC]' if impaired=='true' else '', '.forced' if forced=='true'  else '')
+            filename = output_folder + filename
+            LOG.debug('Subtitle filename: {}'.format(filename))
+            try:
+                r = requests.get(url, allow_redirects=True)
+                #LOG.debug("content size: {}".format(len(r.content)))
+                ttml.subtitle_language = lang
+                if codec == 'wvtt':
+                    ttml.parse_vtt_from_string(r.content.decode('utf-8'))
+                else:
+                    ttml.parse_ttml_from_string(r.content)
+                if subtype != 'ssa':
+                    filename_srt = filename + '.srt'
+                    ttml.write2file(filename_srt)
+                    subs_paths.append(filename_srt)
+                if subtype != 'srt':
+                    filename_ssa = filename
+                    if (subtype == 'both'): filename_ssa += '.ssa'
+                    filename_ssa += '.ssa'
+                    ttml.write2file(filename_ssa)
+                    subs_paths.append(filename_ssa)
+            except:
+                pass
 
     return subs_paths
 
